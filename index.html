@@ -1,0 +1,1307 @@
+
+<!-- 
+    Copyright 2024 Yale University
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pathway to Care Collection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+        .rectangle {
+            width: 100px;
+            height: 40px;
+            background-color: grey;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+			cursor: pointer;
+			text-align: center; /* Add this line */
+			position: relative; 
+        }
+		.rectangle:hover .tooltip-content {
+			visibility: visible;
+			opacity: 0.9; /* Make visible */
+		}
+		.rectangle_spacer {
+            width: 20px;
+            height: 40px;
+            background-color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+			cursor: pointer;
+        }
+		.line {
+			height: 30px; /* Increase the height to make the clickable region larger */
+			background-color: transparent; /* Make the main line container transparent */
+			flex-grow: 1;
+			position: relative;
+			cursor: pointer;
+			display: flex;
+			align-items: center; /* Center the pseudo-element vertically */
+		}
+		.line::before {
+			content: "";
+			height: 2px;
+			background-color: black;
+			width: 100%;
+			position: absolute;
+			top: 50%;
+			transform: translateY(-50%);
+		}
+		.separator-line {
+			width: 20px;
+			height: 2px; /* Adjust the height to control the thickness of the line */
+			background-color: #000; /* This sets the line color to black */
+			margin: 10px auto; /* Centers the line and adds some vertical space; adjust as needed */
+			transform: translateY(-50%);
+		}
+        .tick {
+            width: 1px;
+            height: 10px;
+            background-color: black;
+            position: absolute;
+            top: 50%; /* Center it vertically */
+			transform: translateY(-50%);
+        }
+        .blue-square, .red-circle, .orange-triangle {
+            position: absolute;
+            top: 0px;
+			/*margin: 0;*/
+        }
+        .blue-square {
+            width: 10px;
+            height: 10px;
+            background-color: blue;
+        }
+        .red-circle {
+            width: 10px;
+            height: 10px;
+            background-color: red;
+            border-radius: 50%;
+        }
+        .orange-triangle {
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-bottom: 10px solid orange;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+			z-index: 99; 
+        }
+        .modal-content {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 5px;
+        }
+		.tick-label {
+			position: absolute;
+			font-size: 10px;
+			top: 50%; 
+			transform: translateY(10px);
+		}
+		.date-label {
+			font-size: 10px;
+			position: absolute;
+			top: 50%; 
+			transform: translateY(50%);
+			text-align: center;
+			width: 100%;
+		}	
+				
+		.radio-tooltip {
+			position: relative;
+			display: inline-block;
+		}
+
+		.radio-tooltip .tooltip-content {
+			visibility: hidden;
+			background-color: #555;
+			color: #fff;
+			padding: 8px 12px;
+			border-radius: 4px;
+			position: absolute;
+			z-index: 1;
+			bottom: 125%;
+			left: 50%;
+			margin-left: -60px; /* Adjust this if needed based on the width */
+			opacity: 0;
+			transition: opacity 0.3s;
+			width: 200px; /* Example fixed width */
+			text-align: left; /* Optional: for centered text */
+			
+		}
+
+		.radio-tooltip:hover .tooltip-content {
+			visibility: visible;
+			opacity: 0.9;
+		}
+
+		
+		.tooltip {
+			visibility: hidden;
+			position: absolute;
+			padding: 5px;
+			background-color: #555;
+			color: #fff;
+			text-align: center;
+			border-radius: 4px;
+			z-index: 1;
+			opacity: 0;
+			transition: opacity 0.3s;
+			
+		}
+		.tooltip:hover {
+			visibility: visible;
+			opacity: 0.9;
+		}
+		.tooltip-content {
+			visibility: hidden;
+			background-color: #555;
+			color: #fff;
+			padding: 8px 12px;
+			border-radius: 4px;
+			position: absolute;
+			z-index: 1;
+			bottom: 125%; /* Position the tooltip above the icon */
+			left: 50%;
+			margin-left: -60px; /* Center the tooltip */
+			opacity: 0;
+			transition: opacity 0.3s;
+			transform: translateX(20%);
+		}
+
+		.icon-wrapper:hover .tooltip-content {
+			visibility: visible;
+			opacity: 0.9;
+		}
+		.icon-wrapper {
+			position: absolute;
+			z-index: 10;  /* ensure it appears above the line */
+		}
+
+
+
+    </style>
+</head>
+<body>
+    <h1 id="headerTitle">Pathway to Care</h1>
+
+	
+	<div id="topdiv">
+		<label for="subject_ID">Subject ID:</label>
+		<input type="text" id="subject_ID" name="subject_ID" placeholder="">
+
+		<label for="onsetDate">Onset of Psychosis:</label>
+		<input type="date" id="onsetDate" name="onsetDate" required>
+		
+		<label for="consentDate">LHS Consent:</label>
+		<input type="date" id="consentDate" name="consentDate" required>
+		
+		<label for="admissionDate">Admission:</label>
+		<input type="date" id="admissionDate" name="admissionDate" required>
+		
+		<button onclick="drawPTC()">Submit</button>
+	</div>
+	
+    <div class="container" id="container"></div>
+	
+    <div class="modal" id="eventModal">
+        <div class="modal-content">
+			<b>Community Nodes (Care-seeking Facilitators):</b><br>
+			<label><input type="radio" name="eventType" value="Self"><span class="radio-tooltip">Patient Instigates Care-seeking<span class="tooltip-content">E.g., calls for help themselves or takes self to ED</span></span></label><br>
+			<label><input type="radio" name="eventType" value="Family">Any Family</label><br>
+			<label><input type="radio" name="eventType" value="Police">Police</label><br>
+			<label><input type="radio" name="eventType" value="Educational">Teacher or Guidance Counselor</label><br>
+			<label><input type="radio" name="eventType" value="OtherComm"><span class="radio-tooltip">Other: <span class="tooltip-content">Community caregiver not otherwise included</span></span></label>
+			<input type="text" id="otherCommInput" placeholder="Specify..."><br>
+			<br>
+			<b>Clinical Nodes (Locations of Care):</b><br>
+            <label><input type="radio" name="eventType" value="ED">Emergency Department Visit</label><br>
+            <label><input type="radio" name="eventType" value="Inpt">Psychiatric Inpatient Admission</label><br>
+            <label><input type="radio" name="eventType" value="IOP">Intensive Outpatient</label><br>
+			<label><input type="radio" name="eventType" value="PCP">Primary Care Provider</label><br>
+			<label><input type="radio" name="eventType" value="Outpt">Outpatient Mental Health</label><br>
+			<label><input type="radio" name="eventType" value="Acute"></label>Acute Evaluation<br>
+			<label><input type="radio" name="eventType" value="Mobile"></label>Mobile Evaluation<br>
+			<label><input type="radio" name="eventType" value="OtherMH"><span class="radio-tooltip">Other Mental Health<span class="tooltip-content">E.g., Prison mental health, in-home psychiatric services, substance use disorder inpatient and outpatient</span></span></label><br>
+			<label><input type="radio" name="eventType" value="OtherMed"><span class="radio-tooltip">Other Medical Provider<span class="tooltip-content">E.g., Outpatient non-psychiatric, non-PCP (e.g., neurologist), Inpatient medical</span></span></label><br>
+			<label><input type="radio" name="eventType" value="OtherClin"><span class="radio-tooltip">Other: <span class="tooltip-content">Clinical caregiver not otherwise included</span></span></label>
+			<input type="text" id="otherClinInput" placeholder="Specify..."><br>
+			<br>
+			<b>Other Key Event:</b><br>
+			<label><input type="radio" name="eventType" value="AP">First antipsychotic (for psychosis)</label><br>
+			<br>
+            <label>Date: <input type="date" id="eventDate"></label><br>
+			<br>
+			<label>Order: <input type="text" id="eventOrder" value="1"></label><br><br>
+
+            <button onclick="updateData()">Update</button>
+			<button onclick="removeEntryFromModal()">Delete</button>
+            <button onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+
+	<button onclick="importCSV()" style="position: absolute; top: 10px; right: 165px;">ImportCSV</button>
+	<button id = "exportCSVButton" onclick="exportCSV()" style="display: none; position: absolute; top: 10px; right: 85px;">ExportCSV</button>
+	<button id = "exportVizButton" onclick="exportViz()" style="display: none; position: absolute; top: 10px; right: 10px;">ExportVIZ</button>
+
+<footer style="text-align: right;">
+    <p>This project is licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>.</p>
+</footer>
+
+
+
+<script>
+var subject_ID, onsetDate, consentDate, admissionDate, clickedPosition;
+var eventsData = {};
+var existingNodeData;
+
+comm_nodes = ['Self','Family','Police','Educational','OtherComm'];
+clin_nodes = ['ED','Inpt','IOP','PCP','Outpt','Acute','Mobile','OtherMH','OtherMed','OtherClin'];
+
+months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function drawPTC() {
+	// first check to see if subject, onset, and enrollment exist where entered in topDiv
+	subject_ID = document.getElementById('subject_ID').value;
+	onsetDate = document.getElementById('onsetDate').value;
+	consentDate = document.getElementById('consentDate').value;
+	admissionDate = document.getElementById('admissionDate').value;
+		
+	// Check if any keys are empty (CAN move forward without admissionDate)
+    if (!subject_ID || !onsetDate || !consentDate) {
+        alert("Please enter Subject ID, Onset Date, and Consent Date");
+        return;  // exit the function
+    }
+	
+	//fix date format
+	onsetDate = new Date(onsetDate.replace(/-/g, '\/'));
+	consentDate = new Date(consentDate.replace(/-/g, '\/'));
+	if (admissionDate != ''){
+		admissionDate = new Date(admissionDate.replace(/-/g, '\/'));
+		}
+	
+	// Check date logic
+    if (onsetDate >= consentDate) {
+        alert("Consent Date must occur after Onset Date");
+        return;  // exit the function
+    }
+	
+	if (admissionDate && consentDate > admissionDate) {
+		alert("Admission Date must occur on or after Consent Date");
+        return;  // exit the function
+    }	
+	
+	
+	//make topDiv go away
+	const topDiv = document.getElementById('topdiv');
+	topDiv.style.display = 'none'; 
+	
+	//make export buttons visible
+	let exportCSVButton = document.getElementById("exportCSVButton");
+	exportCSVButton.style.display = "block";
+	let exportVizButton = document.getElementById("exportVizButton");
+	exportVizButton.style.display = "block";
+
+	// change headline
+	document.getElementById('headerTitle').textContent = subject_ID + " - Pathway to Care";
+	
+
+	if (onsetDate && consentDate) {
+		const container = document.getElementById('container');
+
+		// Compute total days between onset and consent
+		const totalDays = (consentDate - onsetDate) / (1000 * 60 * 60 * 24); 
+
+		let currentTickDate = new Date(onsetDate.getFullYear(), onsetDate.getMonth() + 1, 1);
+		const ticksArray = [];
+
+		// Add first day of every month between onset and consent to ticksArray
+		while (currentTickDate < consentDate) {
+			ticksArray.push(currentTickDate);
+			currentTickDate = new Date(currentTickDate.getFullYear(), currentTickDate.getMonth() + 1, 1);
+		}
+		
+		let ticks = '';
+		let previousTickPercentage = 0; // Starts at 0 since it's the beginning
+
+		for (let i = 0; i < ticksArray.length; i++) {
+			// Calculate the percentage of where this tick should be positioned
+			const daysFromStart = (ticksArray[i] - onsetDate) / (1000 * 60 * 60 * 24);
+			const tickPercentage = (daysFromStart / totalDays) * 100;
+
+			const currentDate = ticksArray[i];
+			let label = '';
+
+			if (currentDate.getMonth() === 0) {
+				label = `<strong>${currentDate.getFullYear()}</strong>`;
+			} else {
+				label = months[currentDate.getMonth()];
+			}
+
+			ticks += `
+				<div class="tick" style="left: ${tickPercentage}%;"></div>
+				<div class="tick-label" style="left: ${tickPercentage}%;">${label}</div>
+			`;
+
+			previousTickPercentage = tickPercentage;
+		}
+
+		container.innerHTML = `
+			<div class="rectangle" id="onsetRectangle">Psychosis Onset</div>
+			<div class="line" onclick="showModal(event)">${ticks}</div>
+			<div class="rectangle" id="consentRectangle">LHS<br> Consent</div>
+			<div class="separator-line"></div>
+			<div class="rectangle" id="admissionRectangle">Admission</div>
+		`;
+
+		const line = document.querySelector('.line');
+
+		// Preprocess: sort the events for each date by 'order'
+        for (const [date, events] of Object.entries(eventsData)) {
+            events.sort((a, b) => a.order - b.order);
+        }
+		
+        // Calculate Number of Nodes Per Date
+        const nodesPerDate = {};
+        for (const [date, events] of Object.entries(eventsData)) {
+            nodesPerDate[date] = events.length;
+        }		
+		
+        // Determine Vertical Position
+        function calculateVerticalPosition(order, totalNodes) {
+            const distance = 20; // Change if you want the nodes closer/further apart
+            if (totalNodes === 1) {
+                //return 0; // Centered
+				return 10;
+            } else {
+                const middle = (totalNodes - 1) / 2;
+                return (order - middle) * distance + 10;
+            }
+        }
+		
+		// Draw all the nodes
+        for (const [date, events] of Object.entries(eventsData)) {
+            const d = new Date(date);
+            const percentage = (d.getTime() - onsetDate.getTime()) / (consentDate.getTime() - onsetDate.getTime());
+
+            events.forEach((eventData, index) => {
+                let className;
+
+                switch (true) {
+                    case clin_nodes.includes(eventData.type):
+                        className = 'blue-square';
+                        break;
+                    case comm_nodes.includes(eventData.type):
+                        className = 'red-circle';
+                        break;
+                    case eventData.type == 'AP':
+                        className = 'orange-triangle';
+                        break;
+					case eventData.type.substring(0,9) == 'OtherComm':
+                        className = 'red-circle';
+                        break;
+					case eventData.type.substring(0,9) == 'OtherClin':
+                        className = 'blue-square';
+                        break;
+                    default:
+                        alert('Invalid event type');
+                        return;
+                }
+				
+                const top = calculateVerticalPosition(index, nodesPerDate[date]);
+                
+				const formattedDate = formatDate(eventData.date);
+                const tooltipContent = `<div class="tooltip-content">${eventData.type} ${formattedDate}</div>`;
+
+                const eventElement = document.createElement('div');
+                eventElement.style.left = (percentage * 100) + '%';
+                eventElement.style.top = `${top}px`; // Use calculated vertical position
+                eventElement.className = `${className} icon-wrapper`;
+				
+				eventElement.dataset.date = eventData.date;
+				eventElement.dataset.type = eventData.type;
+				//if (eventData.subtype) eventElement.dataset.subtype = eventData.subtype;
+				eventElement.dataset.order = eventData.order.toString(); 
+
+				eventElement.onclick = (e) => {
+					e.stopPropagation();
+					// Extracting data from the clicked element
+					const eventInfo = {
+						date: e.currentTarget.dataset.date,
+						type: e.currentTarget.dataset.type,
+						//subtype: e.currentTarget.dataset.subtype,
+						order: parseInt(e.currentTarget.dataset.order, 10)
+					};
+					showModal(e, eventInfo);
+				};
+				
+                eventElement.innerHTML = tooltipContent;
+
+                line.appendChild(eventElement);
+            });
+        }
+
+        // Add event listeners to the rectangles
+        const onsetRectangle = document.getElementById('onsetRectangle');
+		const consentRectangle = document.getElementById('consentRectangle');
+        const admissionRectangle = document.getElementById('admissionRectangle');
+
+		
+		let onsetTooltip = document.createElement('div');
+		onsetTooltip.className = 'tooltip-content'; // Directly use tooltip-content as class for simplicity
+		onsetTooltip.innerHTML = formatDate(onsetDate.toISOString().split('T')[0]);
+		onsetRectangle.appendChild(onsetTooltip); // Append the tooltip to the parent element
+        onsetRectangle.addEventListener('click', () => {
+            topDiv.style.display = 'block';
+        });
+		
+		let consentTooltip = document.createElement('div');
+		consentTooltip.className = 'tooltip-content'; 
+		consentTooltip.innerHTML = formatDate(consentDate.toISOString().split('T')[0]);
+		consentRectangle.appendChild(consentTooltip); 
+		consentRectangle.addEventListener('click', () => {
+            topDiv.style.display = 'block';
+        });
+		
+		let admissionTooltip = document.createElement('div');
+		admissionTooltip.className = 'tooltip-content';
+		if (admissionDate != ''){
+			admissionTooltip.innerHTML = formatDate(admissionDate.toISOString().split('T')[0]);
+			admissionRectangle.appendChild(admissionTooltip); 
+		}
+        admissionRectangle.addEventListener('click', () => {
+            topDiv.style.display = 'block';
+        });
+		
+    } else {
+        alert('Please enter both dates.');
+    }
+}
+
+// Function to format the date from YYYY-MM-DD to MM/DD/YY
+function formatDate(dateString) {
+	const [year, month, day] = dateString.split('-');
+    const shortYear = year.slice(-2);  // get last 2 characters of year
+    return `${month}/${day}/${shortYear}`;
+}
+
+// Function to format the date to from MM/DD/YY to YYYY-MM-DD
+function convertDateFormat(dateString) {
+    let parts = dateString.split('/');
+
+    if (parts.length !== 3) {
+        return null; // Invalid date format
+    }
+
+    let month = parts[0];
+    let day = parts[1];
+    let year = parts[2];
+
+    // Convert 2-digit year to 4-digit year.
+    // This assumes that all years are in 2000s.
+    // Adjust if you have dates from the 1900s.
+    if (year.length === 2) {
+        year = '20' + year;
+    }
+
+    return `${year}-${month}-${day}`;
+}
+
+
+function monthDiff(d1, d2) {
+	let months;
+	months = (d2.getFullYear() - d1.getFullYear()) * 12;
+	months -= d1.getMonth();
+	months += d2.getMonth();
+	return months <= 0 ? 0 : months;
+}
+
+// Modal window for node data input
+function showModal(event, eventData) {
+	existingNodeData = null;  // reset it to blank -- will update below if not new node	
+	
+	const line = document.querySelector('.line');
+	const percentageClicked = (event.clientX - line.getBoundingClientRect().left) / line.clientWidth;
+	const interpolatedTime = new Date(onsetDate.getTime() + percentageClicked * (consentDate.getTime() - onsetDate.getTime()));
+	
+	document.getElementById('otherCommInput').value = ""
+	document.getElementById('otherClinInput').value = ""
+	document.getElementById('eventDate').value = interpolatedTime.toISOString().split('T')[0];
+	document.getElementById('eventOrder').value = "1";
+	document.getElementById('eventModal').style.display = 'flex';
+	const radioButtons = document.querySelectorAll('input[type="radio"][name="eventType"]');
+		radioButtons.forEach(button => {
+			button.checked = false;
+		});
+	// editing an existing node -- so fill in modal stuff from eventData
+	if (eventData != null) {
+		existingNodeData = eventData; // pop data up to a global variable for updateData() to use
+		
+		// handle the condition when editing an OtherComm or OtherClin node
+		document.querySelector(`input[value="${eventData.type.substring(0,9) == "OtherComm" || eventData.type.substring(0,9) == "OtherClin" ? eventData.type.substring(0,9) : eventData.type}"]`).checked = true;
+		document.getElementById('otherClinInput').value = eventData.type.substring(0,9) == "OtherClin" ? eventData.type.substring(10): "";
+		document.getElementById('otherCommInput').value = eventData.type.substring(0,9) == "OtherComm" ? eventData.type.substring(10): "";
+		
+		document.getElementById('eventDate').value = eventData.date;
+		document.getElementById('eventOrder').value = eventData.order;
+	}
+	
+	clickedPosition = percentageClicked * 100;
+}
+
+function closeModal() {
+	document.getElementById('eventModal').style.display = 'none';
+	ind = null;
+}
+
+function updateData() {
+	
+	// round down precision of date to YYYY-MM-DD
+	const rawDate = new Date(document.getElementById('eventDate').value.replace(/-/g, '\/'));
+	const eventDate = rawDate.toISOString().split('T')[0];
+
+	// Make sure that the new event is within onset and consent
+    if (rawDate < onsetDate | rawDate > consentDate) {
+        alert("Date must be between Onset and Consent");
+        return;  // exit the function
+    }
+	
+	// see if there are no radio buttons selected so can alert user to error:
+	if (document.querySelector('input[name="eventType"]:checked') === null){
+		alert("Please select a category label");
+        return;  // exit the function
+    }
+	
+	var eventType = document.querySelector('input[name="eventType"]:checked').value;
+
+	//let eventSubtype;	
+	if(eventType === "OtherComm") {
+		eventType = "OtherComm-" + document.getElementById('otherCommInput').value;
+	} else if(eventType === "OtherClin") {
+		eventType = "OtherClin-" + document.getElementById('otherClinInput').value;
+	}
+
+	var newOrder = parseInt(document.getElementById('eventOrder').value, 10);
+
+    // If existingNodeData exists, remove the old entry and shift orders
+    if (existingNodeData) {
+        const existingEntries = eventsData[existingNodeData.date];
+
+        if (existingEntries) {
+            const indexToRemove = existingEntries.findIndex(entry => 
+                entry.date === existingNodeData.date &&
+                entry.type === existingNodeData.type &&
+                entry.order === existingNodeData.order
+            );
+
+            const originalOrder = existingNodeData.order;
+            
+            if (indexToRemove !== -1) {
+                existingEntries.splice(indexToRemove, 1);
+            }
+
+            if (!existingEntries.length) {
+                delete eventsData[existingNodeData.date];
+            }
+
+            // Adjust order logic based on change direction
+            if (originalOrder < newOrder) {
+                existingEntries.forEach(entry => {
+                    if (entry.order > originalOrder && entry.order <= newOrder) {
+                        entry.order--;
+                    }
+                });
+            } else if (originalOrder > newOrder) {
+                existingEntries.forEach(entry => {
+                    if (entry.order >= newOrder && entry.order < originalOrder) {
+                        entry.order++;
+                    }
+                });
+            }
+        }
+    }else if (eventsData[eventDate]) {
+        // If existingNodeData is null but the date exists in eventsData, set the order to one more than the current entries
+        newOrder = eventsData[eventDate].length + 1;
+    }
+
+    // Insert the new data
+    if (!eventsData[eventDate]) {
+        eventsData[eventDate] = [];
+    }
+    eventsData[eventDate].push({
+        date: eventDate,
+        type: eventType,
+        order: newOrder
+    });
+
+	// last loop through all data to make sure order is right (no dups, runs from 1 to length of entries)
+	for (let date in eventsData) {
+	  // Sort the events by their 'order'
+	  eventsData[date].sort((a, b) => a.order - b.order);
+	  
+	  // Reset the 'order' sequentially
+	  eventsData[date].forEach((event, index) => {
+		event.order = index + 1;
+	  });
+	}
+
+    drawPTC();
+    closeModal();
+}
+
+function removeEntryFromModal() {
+    // Access date
+    const date = document.getElementById('eventDate').value;
+
+    // Access type
+    let type;
+    const radios = document.querySelectorAll('input[name="eventType"]');
+    radios.forEach(radio => {
+        if (radio.checked) {
+            type = radio.value;
+
+            // Check for "Other" options and get corresponding input value
+            if (type === "OtherComm") {
+                type = "OtherComm-" + document.getElementById('otherCommInput').value;
+            } else if (type === "OtherClin") {
+                type = "OtherClin-" + document.getElementById('otherClinInput').value;
+            }
+        }
+    });
+
+    // Access order
+    const order = parseInt(document.getElementById('eventOrder').value);
+
+    // Call removeEntry with extracted values
+    removeEntry(date, type, order);
+}
+
+
+function removeEntry(date, type, order) {
+    if (eventsData[date]) {
+        // Filter out the specific entry.
+        eventsData[date] = eventsData[date].filter(event => 
+            event.type !== type ||
+            event.order !== order
+        );
+        
+        // If there are no events left for this date, delete the date key.
+        if (eventsData[date].length === 0) {
+            delete eventsData[date];
+        }
+    }
+	
+	drawPTC();
+	closeModal();
+}
+
+function exportCSV() {
+	
+	// its possible that the eventsData can get out of chrono order
+	// will still draw correctly, but need to sort before exporting to CSV
+	
+	var keysArray = Object.keys(eventsData); // Convert the keys of eventsData to an array
+	keysArray.sort(); // Sort the keys array based on the dates
+
+	// Construct a new sorted dictionary
+	var sortedEventsData = {};
+	keysArray.forEach(function(key) {
+		sortedEventsData[key] = eventsData[key];
+	});
+	
+	const allEvents = [].concat(...Object.values(sortedEventsData)); // collapse dictionary by date (undictionary one level)
+	
+	// first row
+	let csvContent = subject_ID + ',Onset,';
+	csvContent += allEvents.map(event => event.type).join(',') + ',Consent,Admission\n';
+	
+	//second row
+	csvContent += ',' + formatDate(onsetDate.toISOString().split('T')[0]) + ',';
+	csvContent += allEvents.map(event => formatDate(event.date)).join(',') + ',';
+	csvContent += formatDate(consentDate.toISOString().split('T')[0]) + ',';
+	// some conditional stuff in case admissionDate is not defined (declared but has not value)
+	if (admissionDate) {
+		// Ensure admissionDate is a Date object and has a valid date
+		if (Object.prototype.toString.call(admissionDate) === "[object Date]" && !isNaN(admissionDate)) {
+			csvContent += formatDate(admissionDate.toISOString().split('T')[0]);
+		}
+	}
+	
+	// Create a blob and a download link
+	const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+	const url = URL.createObjectURL(blob);
+	const downloadLink = document.createElement('a');
+	downloadLink.href = url;
+	downloadLink.download = 'PTC-' + subject_ID +'.txt';
+
+	// Trigger the download
+	document.body.appendChild(downloadLink);
+	downloadLink.click();
+	document.body.removeChild(downloadLink);
+}
+
+function exportViz() {
+
+	let content = draw_raw;
+	let stringEventsData = JSON.stringify(eventsData);
+		   
+	// Append the desired lines
+	content += "\nvar stringEventsData = \`" + stringEventsData + "\`;";
+	content += "\neventsData = JSON.parse(stringEventsData);"
+	//content += "\nvar eventsData = \"" + JSON.stringify(eventsData) + "\";";
+	content += "\nsubject_ID = \"" + subject_ID +"\";";
+	content += "\nonsetDate = new Date(\"" + JSON.parse(JSON.stringify(onsetDate)) + "\");";
+	content += "\nconsentDate = new Date(\"" + JSON.parse(JSON.stringify(consentDate)) + "\");";
+	if (admissionDate != ''){
+		content += "\nadmissionDate = new Date(\"" + JSON.parse(JSON.stringify(admissionDate)) + "\");";
+	}else{
+		content += "\nadmissionDate = \"\";";
+	}
+	content += "\ndrawPTC();";
+	content += "</scr" + "ipt>";
+	content += "</bo" + "dy>";
+	content += "</ht" + "ml>";
+
+
+
+	// Prompt the user for a filename
+	const filename = prompt("What do you want to call the file?", "PTC_VIZ-" + subject_ID + ".html");
+	if (filename) {
+		const blob = new Blob([content], { type: 'text/html' });
+		const a = document.createElement('a');
+		a.download = filename;
+		a.href = URL.createObjectURL(blob);
+		a.click();
+		URL.revokeObjectURL(a.href);
+	}
+
+}
+
+//var rawCSV;
+function importCSV() {
+    // Check if eventsData is not empty
+    if (Object.keys(eventsData).length !== 0) {
+        let confirmation = confirm("Importing a csv will overwrite your current data. Are you sure you want to proceed?");
+        
+        // If the user clicks "no", exit the function
+        if (!confirmation) {
+            return;
+        }
+
+        // If the user clicks "yes", clear eventsData
+        eventsData = {};
+    }
+    
+    let input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv, .txt'; // Accept both .csv and .txt files
+    
+    input.onchange = function(event) {
+        let file = event.target.files[0];
+        if (file) {
+            let reader = new FileReader();
+            
+            reader.onload = function(e) {
+				let rawCSV = e.target.result;
+                rawCSV = e.target.result;
+				
+				let lines = rawCSV.split('\n');
+				var line1 = lines[0];
+				var line2 = lines[1];
+
+				// cleave subject_ID
+				var entries = line1.split(',');
+				subject_ID = entries[0];
+				line1 = line1.substring(subject_ID.length + 1);
+				line2 = line2.substring(1);
+
+				// cleave ONSET
+				entries = line2.split(',');
+				var dateString = convertDateFormat(entries[0]);
+				onsetDate = new Date(dateString + 'T05:00:00Z');  // This creates a Date object at midnight Eastern Time Zone
+				line1 = line1.substring(6); //"Onset,"
+				line2 = line2.substring(entries[0].length + 1);
+
+				// cleave CONSET / ADMISSION
+				// To make this backward compatible, need to handle case of last note begin "STEP"
+				if (line1.substring(line1.length - 4, line1.length) == "STEP") { 
+					// STEP Version -> set admissionDate and consentDate both to STEP date
+					entries = line2.split(',');
+					dateString = convertDateFormat(entries[entries.length-1]);
+					admissionDate = new Date(dateString + 'T05:00:00Z'); 
+					consentDate = new Date(dateString + 'T05:00:00Z');  
+					line1 = line1.substring(0, line1.length - 5);
+					line2 = line2.substring(0, line2.length - 9);
+					
+				} else { // New version (not ending in "STEP" -- also need to handle case of admissionDate = ''
+					entries = line2.split(',');
+					dateString1 = convertDateFormat(entries[entries.length-1]); // last Date
+
+					if (dateString1 != null){
+						admissionDate = new Date(dateString1 + 'T05:00:00Z');
+					}else{
+						admissionDate = '';
+					}
+
+					dateString2 = convertDateFormat(entries[entries.length-2]); // next to last Date
+
+					consentDate = new Date(dateString2 + 'T05:00:00Z');
+ 					line1 = line1.substring(0, line1.length - 18);
+					if (admissionDate != ''){
+						line2 = line2.substring(0, line2.length - 18); // take two dates off
+					}else{
+						line2 = line2.substring(0, line2.length - 10); // take one date off
+					}
+				}
+
+				// now loop through the remaining and extract to objects
+				const types = line1.split(",");
+				const dates = line2.split(",");
+				let result = [];
+
+				for (let i = 0; i < types.length; i++) {
+					let entry = {
+						date: convertDateFormat(dates[i]),
+						type: types[i],
+						order: undefined
+					};
+					result.push(entry);
+				}
+	
+				// loop through result and format into eventsData
+				result.forEach(entry => {
+					// If the date is not already a key in eventsData, create an empty array for it
+					if (!eventsData[entry.date]) {
+						eventsData[entry.date] = [];
+					}
+					entry.order = eventsData[entry.date].length + 1;
+					eventsData[entry.date].push(entry);
+				});
+						
+				// fill the imported values into the html forms for integration into the other functions
+				document.getElementById('subject_ID').value = subject_ID;
+				document.getElementById('onsetDate').value = onsetDate.toISOString().split('T')[0];
+				document.getElementById('consentDate').value = consentDate.toISOString().split('T')[0];
+				if (admissionDate != ""){
+					document.getElementById('admissionDate').value = admissionDate.toISOString().split('T')[0];
+				}
+				
+				
+				drawPTC();
+            };         
+            reader.readAsText(file);
+        }
+    };
+    input.click();
+}
+
+// bring draw_raw in from external file -- making whole page run single file, more portable
+// all backticks  and dollar signs  need to be preceeded by backslash
+// style is updated to change pointer behavior over line and nodes
+// drawPTC has chunks removed and subtler changes around tooltip / click behavior on rectangles
+// takehome: be very careful updating draw_raw 
+var draw_raw = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pathway to Care</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+        .rectangle {
+            width: 100px;
+            height: 40px;
+            background-color: grey;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+			cursor: pointer;
+			text-align: center; /* Add this line */
+			position: relative; 
+        }
+		.rectangle:hover .tooltip-content {
+			visibility: visible;
+			opacity: 0.9; /* Make visible */
+		}
+		.rectangle_spacer {
+            width: 20px;
+            height: 40px;
+            background-color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+			cursor: pointer;
+        }
+		.line {
+			height: 30px; /* Increase the height to make the clickable region larger */
+			background-color: transparent; /* Make the main line container transparent */
+			flex-grow: 1;
+			position: relative;
+			
+			display: flex;
+			align-items: center; /* Center the pseudo-element vertically */
+		}
+		.line::before {
+			content: "";
+			height: 2px;
+			background-color: black;
+			width: 100%;
+			position: absolute;
+			top: 50%;
+			transform: translateY(-50%);
+		}
+		.separator-line {
+			width: 20px;
+			height: 2px; /* Adjust the height to control the thickness of the line */
+			background-color: #000; /* This sets the line color to black */
+			margin: 10px auto; /* Centers the line and adds some vertical space; adjust as needed */
+			transform: translateY(-50%);
+		}
+        .tick {
+            width: 1px;
+            height: 10px;
+            background-color: black;
+            position: absolute;
+            top: 50%; /* Center it vertically */
+			transform: translateY(-50%);
+        }
+        .blue-square, .red-circle, .orange-triangle {
+            position: absolute;
+            top: 0px;
+			cursor: pointer;
+			/*margin: 0;*/
+        }
+        .blue-square {
+            width: 10px;
+            height: 10px;
+            background-color: blue;
+			cursor: pointer;
+        }
+        .red-circle {
+            width: 10px;
+            height: 10px;
+            background-color: red;
+            border-radius: 50%;
+			cursor: pointer;
+        }
+        .orange-triangle {
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-bottom: 10px solid orange;
+			cursor: pointer;
+        }
+		.tick-label {
+			position: absolute;
+			font-size: 10px;
+			top: 50%; 
+			transform: translateY(10px);
+		}
+		.date-label {
+			font-size: 10px;
+			position: absolute;
+			top: 50%; 
+			transform: translateY(50%);
+			text-align: center;
+			width: 100%;
+		}				
+		.radio-tooltip {
+			position: relative;
+			display: inline-block;
+		}
+		.tooltip {
+			visibility: hidden;
+			position: absolute;
+			padding: 5px;
+			background-color: #555;
+			color: #fff;
+			text-align: center;
+			border-radius: 4px;
+			z-index: 1;
+			opacity: 0;
+			transition: opacity 0.3s;
+			
+		}
+		.tooltip:hover {
+			visibility: visible;
+			opacity: 0.9;
+		}
+		.tooltip-content {
+			visibility: hidden;
+			background-color: #555;
+			color: #fff;
+			padding: 8px 12px;
+			border-radius: 4px;
+			position: absolute;
+			z-index: 1;
+			bottom: 125%; /* Position the tooltip above the icon */
+			left: 50%;
+			margin-left: -60px; /* Center the tooltip */
+			opacity: 0;
+			transition: opacity 0.3s;
+			transform: translateX(20%);
+		}
+		.icon-wrapper:hover .tooltip-content {
+			visibility: visible;
+			opacity: 0.9;
+		}
+		.icon-wrapper {
+			position: absolute;
+			z-index: 10;  /* ensure it appears above the line */
+		}
+
+
+
+    </style>
+</head>
+<body>
+    <h1 id="headerTitle">Pathway to Care:</h1>
+
+    <div class="container" id="container"></div>
+
+<script>
+var subject_ID, onsetDate, consentDate, admissionDate, clickedPosition;
+var eventsData = {};
+var existingNodeData;
+
+comm_nodes = ['Self','Family','Police','Educational','OtherComm'];
+clin_nodes = ['ED','Inpt','IOP','PCP','Outpt','Acute','Mobile','OtherMH','OtherMed','OtherClin'];
+
+months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function drawPTC() {
+
+	// change headline
+	document.getElementById('headerTitle').textContent = subject_ID + " - Pathway to Care";
+	
+
+	if (onsetDate && consentDate) {
+		const container = document.getElementById('container');
+
+		// Compute total days between onset and consent
+		const totalDays = (consentDate - onsetDate) / (1000 * 60 * 60 * 24); 
+
+		let currentTickDate = new Date(onsetDate.getFullYear(), onsetDate.getMonth() + 1, 1);
+		const ticksArray = [];
+
+		// Add first day of every month between onset and consent to ticksArray
+		while (currentTickDate < consentDate) {
+			ticksArray.push(currentTickDate);
+			currentTickDate = new Date(currentTickDate.getFullYear(), currentTickDate.getMonth() + 1, 1);
+		}
+		
+		let ticks = '';
+		let previousTickPercentage = 0; // Starts at 0 since it's the beginning
+
+		for (let i = 0; i < ticksArray.length; i++) {
+			// Calculate the percentage of where this tick should be positioned
+			const daysFromStart = (ticksArray[i] - onsetDate) / (1000 * 60 * 60 * 24);
+			const tickPercentage = (daysFromStart / totalDays) * 100;
+
+			const currentDate = ticksArray[i];
+			let label = '';
+
+			if (currentDate.getMonth() === 0) {
+				label = \`<strong>\${currentDate.getFullYear()}</strong>\`;
+			} else {
+				label = months[currentDate.getMonth()];
+			}
+
+			ticks += \`
+				<div class="tick" style="left: \${tickPercentage}%;"></div>
+				<div class="tick-label" style="left: \${tickPercentage}%;">\${label}</div>
+			\`;
+
+			previousTickPercentage = tickPercentage;
+		}
+
+		container.innerHTML = \`
+			<div class="rectangle" id="onsetRectangle">Psychosis Onset</div>
+			<div class="line">\${ticks}</div>
+			<div class="rectangle" id="consentRectangle">LHS<br> Consent</div>
+			<div class="separator-line"></div>
+			<div class="rectangle" id="admissionRectangle">Admission</div>
+		\`;
+
+		const line = document.querySelector('.line');
+
+		// Preprocess: sort the events for each date by 'order'
+        for (const [date, events] of Object.entries(eventsData)) {
+            events.sort((a, b) => a.order - b.order);
+        }
+		
+        // Calculate Number of Nodes Per Date
+        const nodesPerDate = {};
+        for (const [date, events] of Object.entries(eventsData)) {
+            nodesPerDate[date] = events.length;
+        }		
+		
+        // Determine Vertical Position
+        function calculateVerticalPosition(order, totalNodes) {
+            const distance = 20; // Change if you want the nodes closer/further apart
+            if (totalNodes === 1) {
+                //return 0; // Centered
+				return 10;
+            } else {
+                const middle = (totalNodes - 1) / 2;
+                return (order - middle) * distance + 10;
+            }
+        }
+		
+		// Draw all the nodes
+        for (const [date, events] of Object.entries(eventsData)) {
+            const d = new Date(date);
+            const percentage = (d.getTime() - onsetDate.getTime()) / (consentDate.getTime() - onsetDate.getTime());
+
+            events.forEach((eventData, index) => {
+                let className;
+
+                switch (true) {
+                    case clin_nodes.includes(eventData.type):
+                        className = 'blue-square';
+                        break;
+                    case comm_nodes.includes(eventData.type):
+                        className = 'red-circle';
+                        break;
+                    case eventData.type == 'AP':
+                        className = 'orange-triangle';
+                        break;
+					case eventData.type.substring(0,9) == 'OtherComm':
+                        className = 'red-circle';
+                        break;
+					case eventData.type.substring(0,9) == 'OtherClin':
+                        className = 'blue-square';
+                        break;
+                    default:
+                        alert('Invalid event type');
+                        return;
+                }
+				
+                const top = calculateVerticalPosition(index, nodesPerDate[date]);
+                
+				const formattedDate = formatDate(eventData.date);
+                const tooltipContent = \`<div class="tooltip-content">\${eventData.type} \${formattedDate}</div>\`;
+
+                const eventElement = document.createElement('div');
+                eventElement.style.left = (percentage * 100) + '%';
+                eventElement.style.top = \`\${top}px\`; // Use calculated vertical position
+                eventElement.className = \`\${className} icon-wrapper\`;
+				
+				eventElement.dataset.date = eventData.date;
+				eventElement.dataset.type = eventData.type;
+				//if (eventData.subtype) eventElement.dataset.subtype = eventData.subtype;
+				eventElement.dataset.order = eventData.order.toString(); 
+
+				eventElement.onclick = (e) => {
+					e.stopPropagation();
+					// Extracting data from the clicked element
+					const eventInfo = {
+						date: e.currentTarget.dataset.date,
+						type: e.currentTarget.dataset.type,
+						//subtype: e.currentTarget.dataset.subtype,
+						order: parseInt(e.currentTarget.dataset.order, 10)
+					};
+					showModal(e, eventInfo);
+				};
+				
+                eventElement.innerHTML = tooltipContent;
+
+                line.appendChild(eventElement);
+            });
+        }
+
+        // Add event listeners to the rectangles
+        const onsetRectangle = document.getElementById('onsetRectangle');
+		const consentRectangle = document.getElementById('consentRectangle');
+        const admissionRectangle = document.getElementById('admissionRectangle');
+
+		
+		let onsetTooltip = document.createElement('div');
+		onsetTooltip.className = 'tooltip-content'; // Directly use tooltip-content as class for simplicity
+		onsetTooltip.innerHTML = formatDate(onsetDate.toISOString().split('T')[0]);
+		onsetRectangle.appendChild(onsetTooltip); // Append the tooltip to the parent element
+        onsetRectangle.addEventListener('click', () => {
+            topDiv.style.display = 'block';
+        });
+		
+		let consentTooltip = document.createElement('div');
+		consentTooltip.className = 'tooltip-content'; 
+		consentTooltip.innerHTML = formatDate(consentDate.toISOString().split('T')[0]);
+		consentRectangle.appendChild(consentTooltip); 
+		consentRectangle.addEventListener('click', () => {
+            topDiv.style.display = 'block';
+        });
+		
+		let admissionTooltip = document.createElement('div');
+		admissionTooltip.className = 'tooltip-content';
+		if (admissionDate != ''){
+			admissionTooltip.innerHTML = formatDate(admissionDate.toISOString().split('T')[0]);
+			admissionRectangle.appendChild(admissionTooltip); 
+		}
+
+		
+    } else {
+        alert('Please enter both dates.');
+    }
+}
+
+
+// Function to format the date from YYYY-MM-DD to MM/DD/YY
+function formatDate(dateString) {
+	const [year, month, day] = dateString.split('-');
+    const shortYear = year.slice(-2);  // get last 2 characters of year
+    return \`\${month}/\${day}/\${shortYear}\`;
+}
+`;
+
+
+
+
+</script>
+</body>
+</html>
